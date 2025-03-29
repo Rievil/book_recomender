@@ -1,56 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Book Recommender</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📚 Book Recommender</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Book Search</h1>
-    
-    <input type="text" id="search-box" placeholder="Type book name..." autocomplete="off">
-    <ul id="results"></ul>
+  <div class="container">
+    <h1>📖 Smart Book Recommender</h1>
 
-    <hr>
+    <!-- 🔍 Search Bar with Suggestions -->
+    <input type="text" id="searchBox" placeholder="Type a book title..." autocomplete="off" />
+    <ul id="suggestions"></ul>
 
-    <!-- 🔁 Reset Database Button -->
-    <button id="reset-btn">Reset Database</button>
-    <p id="reset-status"></p>
+    <!-- 📊 Placeholder for Recommended Books -->
+    <h2>🔁 Similar Books</h2>
+    <table id="recommendationTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- You can dynamically populate this later -->
+        <tr><td>1</td><td>Book A</td><td>Author A</td><td>0.93</td></tr>
+        <tr><td>2</td><td>Book B</td><td>Author B</td><td>0.89</td></tr>
+        <tr><td>3</td><td>Book C</td><td>Author C</td><td>0.85</td></tr>
+      </tbody>
+    </table>
 
-    <script>
-        // 🔍 Book Search Logic
-        $('#search-box').on('input', function () {
-            let query = $(this).val();
-            $.ajax({
-                url: "/search",
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify({ query: query }),
-                success: function (data) {
-                    let results = $('#results');
-                    results.empty();
-                    data.forEach(book => {
-                        results.append(`<li>${book.title}</li>`);
-                    });
-                }
-            });
-        });
+    <!-- 🌐 Knowledge Graph -->
+    <h2>🧠 Knowledge Graph</h2>
+    <div id="graphContainer">
+      <p>(Graph will be visualized here)</p>
+      <!-- You can use D3.js or Viser.js here later -->
+    </div>
+  </div>
 
-        // 🔁 Reset DB Logic
-        $('#reset-btn').click(function () {
-            if (confirm("Are you sure you want to reset the database?")) {
-                $.ajax({
-                    url: "/reset-db",
-                    type: "POST",
-                    success: function (data) {
-                        $('#reset-status').text(data.message);
-                    },
-                    error: function () {
-                        $('#reset-status').text("Error resetting database.");
-                    }
-                });
-            }
-        });
-    </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

@@ -46,7 +46,7 @@ def ensure_data_loaded():
         book_count = Book.query.count()
         if book_count == 0:
             print("📂 No books found in the database. Loading data from CSVs...")
-            load_all_data()
+            load_all_data(app)
         else:
             print(f"✅ Found {book_count} books in the database.")
 

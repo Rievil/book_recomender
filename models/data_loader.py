@@ -3,6 +3,7 @@ import os
 from .models import Book, User, Rating
 from .db import db
 from sqlalchemy import select, func
+from tqdm import tqdm
 
 
 def clean_age(age):
@@ -14,13 +15,13 @@ def clean_age(age):
         return None
 
 
-def load_all_data():
-    with db.engine.begin() as conn:
-        stmt = select(func.count()).select_from(Book)
-        book_count = conn.execute(stmt).scalar()
-        if book_count > 0:
-            print(f"✅ Skipping load — {book_count} books already in database.")
-            return
+def load_all_data(app):
+    # with db.engine.begin() as conn:
+    #     stmt = select(func.count()).select_from(Book)
+    #     book_count = conn.execute(stmt).scalar()
+    #     if book_count > 0:
+    #         print(f"✅ Skipping load — {book_count} books already in database.")
+    #         return
 
     print("📂 Loading CSV files...")
 
@@ -66,51 +67,56 @@ def load_all_data():
     print(
         f"✅ Filtered: {len(books_df)} books, {len(users_df)} users, {len(ratings_df)} ratings"
     )
+    with app.app_context():
+        print("Dropping and creating tables...")
+        db.drop_all()
+        db.create_all()
 
-    # db.drop_all()
-    # db.create_all()
+        # Insert books with progress bar
+        print(f"📘 Saving {len(books_df)} books...")
+        for _, row in tqdm(
+            books_df.iterrows(), total=len(books_df), desc="📚 Inserting books"
+        ):
+            book = Book(
+                isbn=row["ISBN"],
+                title=row["Book-Title"],
+                author=row["Book-Author"],
+                year=(
+                    int(row["Year-Of-Publication"])
+                    if str(row["Year-Of-Publication"]).isdigit()
+                    else None
+                ),
+                publisher=row["Publisher"],
+                image_url_s=row["Image-URL-S"],
+                image_url_m=row["Image-URL-M"],
+                image_url_l=row["Image-URL-L"],
+            )
+            db.session.add(book)
 
-    books = [
-        Book(
-            isbn=row["ISBN"],
-            title=row["Book-Title"],
-            author=row["Book-Author"],
-            year=(
-                int(row["Year-Of-Publication"])
-                if str(row["Year-Of-Publication"]).isdigit()
-                else None
-            ),
-            publisher=row["Publisher"],
-            image_url_s=row["Image-URL-S"],
-            image_url_m=row["Image-URL-M"],
-            image_url_l=row["Image-URL-L"],
-        )
-        for _, row in books_df.iterrows()
-    ]
-    print(f"📘 Saving {len(books)} books...")
-    db.session.bulk_save_objects(books)
+        # Insert users with progress bar
+        print(f"👤 Saving {len(users_df)} users...")
+        for _, row in tqdm(
+            users_df.iterrows(), total=len(users_df), desc="👥 Inserting users"
+        ):
+            user = User(
+                id=int(row["User-ID"]),
+                location=row["Location"],
+                age=row["Age"] if not pd.isna(row["Age"]) else None,
+            )
+            db.session.add(user)
 
-    users = [
-        User(
-            id=int(row["User-ID"]),
-            location=row["Location"],
-            age=row["Age"] if not pd.isna(row["Age"]) else None,
-        )
-        for _, row in users_df.iterrows()
-    ]
-    print(f"👤 Saving {len(users)} users...")
-    db.session.bulk_save_objects(users)
+        # Insert ratings with progress bar
+        print(f"⭐ Saving {len(ratings_df)} ratings...")
+        for _, row in tqdm(
+            ratings_df.iterrows(), total=len(ratings_df), desc="⭐ Inserting ratings"
+        ):
+            rating = Rating(
+                user_id=int(row["User-ID"]),
+                isbn=row["ISBN"],
+                book_rating=int(row["Book-Rating"]),
+            )
+            db.session.add(rating)
 
-    ratings = [
-        Rating(
-            user_id=int(row["User-ID"]),
-            isbn=row["ISBN"],
-            book_rating=int(row["Book-Rating"]),
-        )
-        for _, row in ratings_df.iterrows()
-    ]
-    print(f"⭐ Saving {len(ratings)} ratings...")
-    db.session.bulk_save_objects(ratings)
+        db.session.commit()
 
-    db.session.commit()
     print("✅ Data reloaded successfully.")
