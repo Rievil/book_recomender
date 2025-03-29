@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Recommender</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Book Search</h1>
+    
+    <input type="text" id="search-box" placeholder="Type book name..." autocomplete="off">
+    <ul id="results"></ul>
+
+    <hr>
+
+    <!-- 🔁 Reset Database Button -->
+    <button id="reset-btn">Reset Database</button>
+    <p id="reset-status"></p>
+
+    <script>
+        // 🔍 Book Search Logic
+        $('#search-box').on('input', function () {
+            let query = $(this).val();
+            $.ajax({
+                url: "/search",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ query: query }),
+                success: function (data) {
+                    let results = $('#results');
+                    results.empty();
+                    data.forEach(book => {
+                        results.append(`<li>${book.title}</li>`);
+                    });
+                }
+            });
+        });
+
+        // 🔁 Reset DB Logic
+        $('#reset-btn').click(function () {
+            if (confirm("Are you sure you want to reset the database?")) {
+                $.ajax({
+                    url: "/reset-db",
+                    type: "POST",
+                    success: function (data) {
+                        $('#reset-status').text(data.message);
+                    },
+                    error: function () {
+                        $('#reset-status').text("Error resetting database.");
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
