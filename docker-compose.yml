@@ -2,14 +2,14 @@ services:
   web:
     build: .
     ports:
-      - "5050:5000"  # Host:Container
+      - "5050:5000"
     depends_on:
       - db
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/books_db
     volumes:
       - .:/app
-      - ./data:/app/data  # Mount your CSVs inside the container
+      - ./data:/app/data  # ✅ THIS IS CRITICAL
 
   db:
     image: postgres:14
@@ -19,15 +19,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "15432:5432"  # Use a non-conflicting host port
+      - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
-    restart: always
     ports:
-      - "8080:80"  # Access pgAdmin at http://localhost:8080
+      - "8080:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin

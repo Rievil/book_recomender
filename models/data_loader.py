@@ -1,6 +1,8 @@
 import pandas as pd
+import os
 from .models import Book, User, Rating
 from .db import db
+from sqlalchemy import select, func
 
 
 def clean_age(age):
@@ -13,39 +15,61 @@ def clean_age(age):
 
 
 def load_all_data():
+    with db.engine.begin() as conn:
+        stmt = select(func.count()).select_from(Book)
+        book_count = conn.execute(stmt).scalar()
+        if book_count > 0:
+            print(f"✅ Skipping load — {book_count} books already in database.")
+            return
+
     print("📂 Loading CSV files...")
 
-    books_df = pd.read_csv("data/Books.csv", low_memory=False)
-    users_df = pd.read_csv("data/Users.csv", low_memory=False)
-    ratings_df = pd.read_csv("data/Ratings.csv", low_memory=False)
+    # Confirm files exist
+    print("🔍 Checking file paths...")
+    for f in ["Books.csv", "Users.csv", "Ratings.csv"]:
+        full_path = os.path.join("data", f)
+        print(f" - {full_path}: ", os.path.exists(full_path))
 
-    print("🧹 Cleaning and filtering data...")
+    try:
+        books_df = pd.read_csv("data/Books.csv", low_memory=False, nrows=5000)
+        users_df = pd.read_csv("data/Users.csv", low_memory=False, nrows=10000)
+        ratings_df = pd.read_csv("data/Ratings.csv", low_memory=False, nrows=50000)
+    except Exception as e:
+        print("❌ Failed to load CSVs:", e)
+        return
 
-    # Clean age
-    users_df["Age"] = users_df["Age"].apply(clean_age)
+    # Ensure all user IDs in ratings exist in users
+    valid_user_ids = set(users_df["User-ID"])
+    ratings_df = ratings_df[ratings_df["User-ID"].isin(valid_user_ids)]
 
-    # Remove implicit feedback (rating = 0)
-    ratings_df = ratings_df[ratings_df["Book-Rating"] > 0]
+    # Ensure all ISBNs in ratings exist in books
+    valid_isbns = set(books_df["ISBN"])
+    ratings_df = ratings_df[ratings_df["ISBN"].isin(valid_isbns)]
 
-    # Keep only popular books and active users
-    book_counts = ratings_df["ISBN"].value_counts()
-    popular_books = book_counts[book_counts > 50].index
-    ratings_df = ratings_df[ratings_df["ISBN"].isin(popular_books)]
+    print(
+        f"📊 Books: {len(books_df)}, Users: {len(users_df)}, Ratings: {len(ratings_df)}"
+    )
 
-    user_counts = ratings_df["User-ID"].value_counts()
-    active_users = user_counts[user_counts > 100].index
-    ratings_df = ratings_df[ratings_df["User-ID"].isin(active_users)]
+    # ratings_df = ratings_df[ratings_df["Book-Rating"] > 0]
 
-    # Filter books and users to only what's needed
-    books_df = books_df[books_df["ISBN"].isin(ratings_df["ISBN"].unique())]
-    users_df = users_df[users_df["User-ID"].isin(ratings_df["User-ID"].unique())]
+    # book_counts = ratings_df["ISBN"].value_counts()
+    # popular_books = book_counts[book_counts > 50].index
+    # ratings_df = ratings_df[ratings_df["ISBN"].isin(popular_books)]
 
-    print("🧨 Dropping & recreating tables...")
-    db.drop_all()
-    db.create_all()
+    # user_counts = ratings_df["User-ID"].value_counts()
+    # active_users = user_counts[user_counts > 100].index
+    # ratings_df = ratings_df[ratings_df["User-ID"].isin(active_users)]
 
-    print(f"📚 Loading {len(books_df)} books...")
-    books_df = books_df.fillna("")
+    # books_df = books_df[books_df["ISBN"].isin(ratings_df["ISBN"].unique())]
+    # users_df = users_df[users_df["User-ID"].isin(ratings_df["User-ID"].unique())]
+
+    print(
+        f"✅ Filtered: {len(books_df)} books, {len(users_df)} users, {len(ratings_df)} ratings"
+    )
+
+    # db.drop_all()
+    # db.create_all()
+
     books = [
         Book(
             isbn=row["ISBN"],
@@ -63,10 +87,9 @@ def load_all_data():
         )
         for _, row in books_df.iterrows()
     ]
+    print(f"📘 Saving {len(books)} books...")
     db.session.bulk_save_objects(books)
 
-    print(f"👤 Loading {len(users_df)} users...")
-    users_df = users_df.fillna("")
     users = [
         User(
             id=int(row["User-ID"]),
@@ -75,9 +98,9 @@ def load_all_data():
         )
         for _, row in users_df.iterrows()
     ]
+    print(f"👤 Saving {len(users)} users...")
     db.session.bulk_save_objects(users)
 
-    print(f"⭐ Loading {len(ratings_df)} ratings...")
     ratings = [
         Rating(
             user_id=int(row["User-ID"]),
@@ -86,7 +109,8 @@ def load_all_data():
         )
         for _, row in ratings_df.iterrows()
     ]
-
+    print(f"⭐ Saving {len(ratings)} ratings...")
     db.session.bulk_save_objects(ratings)
+
     db.session.commit()
     print("✅ Data reloaded successfully.")
