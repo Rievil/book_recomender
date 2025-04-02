@@ -32,9 +32,9 @@ def load_all_data(app):
         print(f" - {full_path}: ", os.path.exists(full_path))
 
     try:
-        books_df = pd.read_csv("data/Books.csv", low_memory=False, nrows=5000)
-        users_df = pd.read_csv("data/Users.csv", low_memory=False, nrows=10000)
-        ratings_df = pd.read_csv("data/Ratings.csv", low_memory=False, nrows=50000)
+        books_df = pd.read_csv("data/Books.csv", low_memory=False)
+        users_df = pd.read_csv("data/Users.csv", low_memory=False)
+        ratings_df = pd.read_csv("data/Ratings.csv", low_memory=False)
     except Exception as e:
         print("❌ Failed to load CSVs:", e)
         return
@@ -51,21 +51,9 @@ def load_all_data(app):
         f"📊 Books: {len(books_df)}, Users: {len(users_df)}, Ratings: {len(ratings_df)}"
     )
 
-    # ratings_df = ratings_df[ratings_df["Book-Rating"] > 0]
-
-    # book_counts = ratings_df["ISBN"].value_counts()
-    # popular_books = book_counts[book_counts > 50].index
-    # ratings_df = ratings_df[ratings_df["ISBN"].isin(popular_books)]
-
-    # user_counts = ratings_df["User-ID"].value_counts()
-    # active_users = user_counts[user_counts > 100].index
-    # ratings_df = ratings_df[ratings_df["User-ID"].isin(active_users)]
-
-    # books_df = books_df[books_df["ISBN"].isin(ratings_df["ISBN"].unique())]
-    # users_df = users_df[users_df["User-ID"].isin(ratings_df["User-ID"].unique())]
-
+    # Loading full dataset in db, filtering will be in querry
     print(
-        f"✅ Filtered: {len(books_df)} books, {len(users_df)} users, {len(ratings_df)} ratings"
+        f"Filtered: {len(books_df)} books, {len(users_df)} users, {len(ratings_df)} ratings"
     )
     with app.app_context():
         print("Dropping and creating tables...")
@@ -96,7 +84,7 @@ def load_all_data(app):
         # Insert users with progress bar
         print(f"👤 Saving {len(users_df)} users...")
         for _, row in tqdm(
-            users_df.iterrows(), total=len(users_df), desc="👥 Inserting users"
+            users_df.iterrows(), total=len(users_df), desc="Inserting users"
         ):
             user = User(
                 id=int(row["User-ID"]),
@@ -108,7 +96,7 @@ def load_all_data(app):
         # Insert ratings with progress bar
         print(f"⭐ Saving {len(ratings_df)} ratings...")
         for _, row in tqdm(
-            ratings_df.iterrows(), total=len(ratings_df), desc="⭐ Inserting ratings"
+            ratings_df.iterrows(), total=len(ratings_df), desc="Inserting ratings"
         ):
             rating = Rating(
                 user_id=int(row["User-ID"]),
@@ -119,4 +107,4 @@ def load_all_data(app):
 
         db.session.commit()
 
-    print("✅ Data reloaded successfully.")
+    print("Data reloaded successfully.")

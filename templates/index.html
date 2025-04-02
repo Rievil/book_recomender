@@ -5,43 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📚 Book Recommender</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Viser.js (for the knowledge graph) -->
+  <script src="https://cdn.jsdelivr.net/npm/@antv/g2@4.1.36/dist/g2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/data-set@0.11.8/build/data-set.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>📖 Smart Book Recommender</h1>
 
-    <!-- 🔍 Search Bar with Suggestions -->
+    <!-- 🔍 Search Bar -->
     <input type="text" id="searchBox" placeholder="Type a book title..." autocomplete="off" />
     <ul id="suggestions"></ul>
 
-    <!-- 📊 Placeholder for Recommended Books -->
+    <!-- 📚 Recommendation Grid -->
     <h2>🔁 Similar Books</h2>
-    <table id="recommendationTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Title</th>
-          <th>Author</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- You can dynamically populate this later -->
-        <tr><td>1</td><td>Book A</td><td>Author A</td><td>0.93</td></tr>
-        <tr><td>2</td><td>Book B</td><td>Author B</td><td>0.89</td></tr>
-        <tr><td>3</td><td>Book C</td><td>Author C</td><td>0.85</td></tr>
-      </tbody>
-    </table>
-    
-    <!-- https://viserjs.github.io/demo.html#/viser/relation/chord-diagram -->
+    <div class="book-grid" id="recommendationGrid">
+      <p>Type a book title to see recommendations...</p>
+    </div>
+
     <!-- 🌐 Knowledge Graph -->
     <h2>🧠 Knowledge Graph</h2>
     <div id="graphContainer">
-      <p>(Graph will be visualized here)</p>
-      <!-- You can use D3.js or Viser.js here later -->
+      <div id="chord-chart"></div>
     </div>
   </div>
 
+  <!-- JavaScript logic -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <!-- Auto-load graph -->
+  <script>
+    fetch('/graph-data')
+      .then(response => response.json())
+      .then(data => {
+        const ds = new DataSet();
+        const dv = ds.createView().source(data).transform({
+          type: 'diagram.arc',
+          marginRatio: 0.3,
+          sourceField: 'source',
+          targetField: 'target',
+          weightField: 'value'
+        });
+
+        const chart = new G2.Chart({
+          container: 'chord-chart',
+          autoFit: true,
+          height: 400
+        });
+
+        chart.data(dv.rows);
+        chart.coordinate('polar', { innerRadius: 0.6 });
+        chart.tooltip({ showTitle: false, showMarkers: false });
+        chart.legend(false);
+
+        chart.interval()
+          .position('x*y')
+          .color('source')
+          .style({ fillOpacity: 0.85 })
+          .state({ active: { style: { lineWidth: 0, fillOpacity: 1 } } });
+
+        chart.interaction('element-active');
+        chart.render();
+      });
+  </script>
 </body>
 </html>

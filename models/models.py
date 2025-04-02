@@ -1,6 +1,15 @@
 from .db import db
 
 
+class GraphEdge(db.Model):
+    __tablename__ = "graph"
+
+    id = db.Column(db.Integer, primary_key=True)
+    source = db.Column(db.String, nullable=False)
+    target = db.Column(db.String, nullable=False)
+    value = db.Column(db.Integer, default=1)
+
+
 class Book(db.Model):
     __tablename__ = "books"
     isbn = db.Column(db.String, primary_key=True)

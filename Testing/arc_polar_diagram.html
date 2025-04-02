@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🌐 Polar Arc Diagram (Test)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/g2@4.1.36/dist/g2.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    #arc-chart {
+      width: 100%;
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌐 Polar Arc Diagram</h1>
+  <div id="arc-chart"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const data = [
+        { name: 'A', value: 30 },
+        { name: 'B', value: 50 },
+        { name: 'C', value: 80 },
+        { name: 'D', value: 40 },
+        { name: 'E', value: 65 }
+      ];
+
+      const chart = new G2.Chart({
+        container: 'arc-chart',
+        autoFit: true,
+        height: 500
+      });
+
+      chart.data(data);
+      chart.coordinate('polar', { innerRadius: 0.5 });
+      chart.interval()
+        .position('name*value')
+        .color('name');
+
+      chart.tooltip({ showTitle: false });
+      chart.render();
+    });
+  </script>
+</body>
+</html>

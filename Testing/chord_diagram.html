@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ViserJS Chord Diagram Demo</title>
+  <!-- Import Viser and G2Plot via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@antv/g2plot@2.4.20/dist/g2plot.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f0f2f5;
+    }
+    #container {
+      width: 90%;
+      max-width: 900px;
+      height: 700px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <script>
+    const data = [
+      { source: 'A', target: 'B', value: 1243 },
+      { source: 'A', target: 'C', value: 853 },
+      { source: 'A', target: 'D', value: 274 },
+      { source: 'B', target: 'A', value: 841 },
+      { source: 'B', target: 'C', value: 551 },
+      { source: 'B', target: 'D', value: 287 },
+      { source: 'C', target: 'A', value: 1043 },
+      { source: 'C', target: 'B', value: 990 },
+      { source: 'C', target: 'D', value: 500 },
+      { source: 'D', target: 'A', value: 145 },
+      { source: 'D', target: 'B', value: 300 },
+      { source: 'D', target: 'C', value: 173 },
+    ];
+
+    const chord = new G2Plot.Chord('container', {
+      data,
+      sourceField: 'source',
+      targetField: 'target',
+      weightField: 'value',
+      nodeStyle: {
+        lineWidth: 1,
+        stroke: '#fff',
+      },
+      label: {
+        style: {
+          fill: '#000',
+          fontSize: 12,
+        },
+      },
+      edgeStyle: {
+        fillOpacity: 0.7,
+      },
+    });
+
+    chord.render();
+  </script>
+</body>
+</html>

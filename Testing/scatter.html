@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📈 Viser.js Scatter Plot Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/g2@4.1.36/dist/g2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@antv/data-set@0.11.8/build/data-set.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/viser@2.4.17/umd/index.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    #scatter-plot {
+      width: 100%;
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Scatter Plot Example (Viser/G2)</h1>
+  <div id="scatter-plot"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const data = [
+        { x: 1, y: 3, label: 'A' },
+        { x: 2, y: 4, label: 'B' },
+        { x: 3, y: 2, label: 'C' },
+        { x: 4, y: 5, label: 'D' },
+        { x: 5, y: 1, label: 'E' }
+      ];
+
+      const chart = new G2.Chart({
+        container: 'scatter-plot',
+        autoFit: true,
+        height: 500,
+      });
+
+      chart.data(data);
+      chart.scale({
+        x: { nice: true },
+        y: { nice: true }
+      });
+
+      chart.tooltip(true);
+      chart.point()
+        .position('x*y')
+        .color('label')
+        .shape('circle')
+        .size(8)
+        .tooltip('label*x*y');
+
+      chart.render();
+    });
+  </script>
+</body>
+</html>

@@ -1,18 +1,25 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, current_app
 import psycopg2
 from psycopg2 import OperationalError
 from models.db import db
 from models.models import Book
 from models.recommender import search_books
 from models.data_loader import load_all_data
+from models.graph_builder import create_graph_table
 import os
 import time
-
+from sqlalchemy import text
+from models.recommender import Recomender
+import threading
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "postgresql://postgres:postgres@db:5432/books_db"
 )
+rc = Recomender(app.config["SQLALCHEMY_DATABASE_URI"])
+app.config["RECOMENDER"] = rc
+app.config["IS_TRAINING"] = False
+
 app.config["SQLALCHEMY_ECHO"] = True
 # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 #     "DATABASE_URL", "postgresql://postgres:postgres@localhost/books_db"
@@ -41,6 +48,55 @@ def wait_for_postgres():
             time.sleep(1)
 
 
+@app.route("/train-recommender", methods=["POST"])
+def trigger_training():
+
+    def async_train():
+        with app.app_context():
+            app.config["IS_TRAINING"] = True
+            rc = app.config["RECOMENDER"]
+            rc.is_trained = False
+            rc.start_train()  # <-- your .train() method
+            app.config["IS_TRAINING"] = False
+            print("✅ Recommender training complete.")
+
+    with app.app_context():
+        if app.config["IS_TRAINING"] == True:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Recommender is already training.",
+                    }
+                ),
+                400,
+            )
+
+        if app.config["RECOMENDER"].is_trained == True:
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Recommender is already trained.",
+                    }
+                ),
+                400,
+            )
+
+    thread = threading.Thread(target=async_train)
+    thread.start()
+
+    return (
+        jsonify(
+            {
+                "status": "started",
+                "message": "Recommender training started in background.",
+            }
+        ),
+        202,
+    )
+
+
 def ensure_data_loaded():
     with app.app_context():
         book_count = Book.query.count()
@@ -58,14 +114,50 @@ def index():
 
 @app.route("/search", methods=["POST"])
 def search():
-    query = request.json.get("query", "")
-    results = search_books(query)
-    return jsonify([{"title": book.title} for book in results])
+    data = request.get_json()
+    query = data.get("query", "")
+
+    # Example fuzzy search logic
+    results = Book.query.filter(Book.title.ilike(f"%{query}%")).limit(10).all()
+
+    return jsonify([{"title": book.title, "isbn": book.isbn} for book in results])
+
+
+@app.route("/predict/<isbn>")
+def predict(isbn):
+    rc = current_app.config["RECOMENDER"]
+    res = rc.predict(isbn)
+
+    out = []
+    for key in ["suggestion", "content", "same_author"]:
+        try:
+            df = res[key]
+            for _, row in df.iterrows():
+                row_dict = {
+                    "title": row["title"],
+                    "isbn": row["isbn"],
+                    "author": row["book_author"],
+                    "year": row["year_of_publication"],
+                    "similarity": key,  # e.g. "same_author"
+                }
+                out.append(row_dict)
+        except:
+            pass
+
+    return jsonify(out)
+
+
+@app.route("/graph-data")
+def graph_data():
+    result = db.session.execute(text("SELECT source, target, value FROM graph"))
+    links = [{"source": row[0], "target": row[1], "value": row[2]} for row in result]
+    return jsonify(links)
 
 
 @app.route("/reset-db", methods=["POST"])
 def reset_db():
-    load_all_data()
+    with app.app_context():
+        load_all_data(app)
     return jsonify({"status": "success", "message": "Database reset complete!"})
 
 
@@ -77,6 +169,9 @@ if __name__ == "__main__":
         db.create_all()
 
     ensure_data_loaded()
+
+    with app.app_context():
+        create_graph_table()
     #     print("✅ Flask is now running on http://localhost:5050")
     app.run(host="0.0.0.0", port=5000)
     # except Exception as e:
