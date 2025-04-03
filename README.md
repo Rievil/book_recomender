@@ -1,5 +1,15 @@
-# Recomender app
-This is a recommender Flask app, which combines a nearest neibrehood for rated books by users, content similarity of content of books and books from same author. The aplication is build in docker contianer, so for first iniciazition its needed to build the container. The app is based on Flask python server with connection to Postogre database. This works as a main backbone of ML aplication. The ML tool is made in form of class Recomender, which is after running the container stored in config of Flask. The Recommender is independent on the aplication, and has its own connection to the db. The db, can be placed also elsewhere, then the recomender need the proper connection string url. 
+# Recommender App
+
+This is a Flask-based recommender app that combines:
+- Nearest-neighbor similarity based on user ratings
+- Content-based similarity between books
+- Author-based grouping for recommendations
+
+The application runs in a Docker container. For first-time use, you need to build the container. It uses a Flask server connected to a PostgreSQL database, which serves as the backbone for the ML-powered recommendation system.
+
+The machine learning logic is encapsulated in a `Recommender` class. After starting the container, an instance of this class is stored in the Flask app’s config. The recommender is independent from the app itself and manages its own connection to the database. You can also connect to an external database by specifying the correct connection string.
+
+## Getting Started
 
 To build the container:
 ```
@@ -11,24 +21,46 @@ To run the app:
 docker-compose up
 ```
 
-The app wepbage is mapped to 5050 port on local.
+The app’s web interface is exposed on port `5050` by default.
 
-## The aplication limits
-The aplication is designed to train the recomender on the dataset stored in db. By this way, the db can be populated by new records, and the training can be triggered either by time trigger, event (after 100 new ratings or book records for example). Right now the training is controled via API call "/train-recommender". The predict API call "/predict/<isbn>" return a JSON of predicted books, which are similar to the inputed ISBN. Right now, the aplication works only with books within the DB. If a unknown book is written in the search bar it will not return similar books. 
+## Application Limits
 
-This could be solved by using content-based search if the ISBN is not present in the DB. The current kaggle dataset has a lot of messy information in fields Book-Title, Book-Author. Book-Author has many version of the same author, for example JRRR Tolkien. This name is a nice example for it is complex, and is stored in db multiple times. In order to look for similar authors, the normal filter would not work properly, so I have used clustering of normalized Book-Author names using SBERT model "all-MiniLM-L6-v2" from SentenceTransformer package. By clustering names, I have made more clear version of canonical author names, so its realativly easy to filter by canonical_id. 
+The app is designed to train the recommender on a dataset stored in the database. This allows the database to be continuously updated with new records, and training can be triggered manually, or in the future, automatically (e.g. after 100 new ratings or book entries).
 
-## Simplicity over complexity
-The whole repository has part focused on testing and development marked with number 01 and 02. The notebook 01 was used to explore the dataset, to test pre-processing steps and make working example of recommender version in bare-bones. The notebook 02 is focused on testing databse connection, storage of the data, and interacting with the running app and for testing their API routes. For this I used Postman aplication. 
+Right now:
+- Training is triggered via the API call: `/train-recommender`
+- Predictions are returned via: `/predict/<isbn>`, which outputs a JSON list of recommended books similar to the given ISBN
 
-Once I was happy with the results, which gave at least sufficient results, I have worked the solution into the app itself. The parts like HTML webpage and css style and .js script were done using chat GPT to speed up the build process and also for faster modificaitons.
+Currently, the app only works with books that already exist in the database. If a book outside the database is typed into the search bar, no results will be returned.
 
-The solution is right now stacking result from three differnet aproaches, and then droping same ISBN and Book-Title records. The solution can be quite easily modular this way, and we can change the selected process on the fly. The recomender can be also tested on running app, so In case that DB has high trafic, and the records are changing often and we have to update model or model architecture on daily basis, this design allows it. 
+This can be improved using a content-based fallback, enabling the system to return recommendations even when the ISBN is not found in the database.
 
-## Knowledge graph
-I was also experimenting with knowledge graphs, to visualize simalarities of books visualy, beacuse this can help to explore and transverse across book clusters. I was also thinking about preparing this for my friend writer, to help her assess the books by this way. The generated html were done using pyvis package. Originaly I wanted to implement those in the recomender as well, to show book cards and their position on map of books.
+## Canonical Author Clustering
 
-## The kaggle dataset 
-The "Book Recommendation Dataset" has a number of streams how to develop a recomender model. Those solutions are alredy present in some github repositories or on kaggle itself. I have prepared a framework in which those model designs can be tested and evaluated a presented to a user. The flask server can be also reduced to only minimum profile, controlled only by API calls. 
+The original Kaggle dataset contains messy and inconsistent values for `Book-Author`. For example, J.R.R. Tolkien appears under many variants like "J R R Tolkien", "John Ronald Reuel Tolkien", or "J.R.R.Tolkien".
 
+To address this, I applied clustering on normalized author names using the `all-MiniLM-L6-v2` model from the SentenceTransformers library (SBERT). This generates canonical versions of author names, and books can now be filtered using a canonical author ID (`canonical_author_id`).
 
+## Simplicity Over Complexity
+
+This repository includes development notebooks:
+- `01-Exploration.ipynb` was used to explore the dataset, test preprocessing, and build a prototype recommender
+- `02-Database-and-API.ipynb` focuses on database interaction, storing records, and testing API routes (via Postman)
+
+Once the results were satisfactory, the logic was integrated into the app. The HTML, CSS, and JavaScript parts were quickly built and refined using ChatGPT to accelerate the process.
+
+The recommender stacks results from three different strategies and removes duplicates by ISBN and title. This makes the system modular and easy to extend or modify on the fly.
+
+Because the recommender can be tested in the running app, it’s also ready for real-world deployments where high traffic or frequent updates require retraining or switching model architectures dynamically.
+
+## Knowledge Graph
+
+I’ve experimented with building knowledge graphs to visually represent relationships between books. This makes it easier to explore or navigate across book clusters. One use case I considered was for a friend who’s a writer, to help her analyze related works and genres visually.
+
+The graphs were generated using the `pyvis` package. I initially planned to integrate them into the app to show book cards and their position in a network of similar titles.
+
+## The Kaggle Dataset
+
+The app uses the "Book Recommendation Dataset" from Kaggle, which supports many different approaches to building recommender models. Some of these models are already explored in existing GitHub repositories or Kaggle kernels.
+
+This project provides a framework to test and evaluate those approaches and present the results through a user-friendly interface. The Flask server can be extended into a full web app or reduced to a minimal backend controlled entirely via API calls.
