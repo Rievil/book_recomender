@@ -9,6 +9,11 @@ The application runs in a Docker container. For first-time use, you need to buil
 
 The machine learning logic is encapsulated in a `Recommender` class. After starting the container, an instance of this class is stored in the Flask app’s config. The recommender is independent from the app itself and manages its own connection to the database. You can also connect to an external database by specifying the correct connection string.
 
+> [!IMPORTANT]
+> After pulling the repository, please make sure to create a folder data, and put the dataset from kaggle repository there so the app can load them in the DB
+> (Dataset)[https://www.kaggle.com/datasets/arashnic/book-recommendation-dataset/code]
+
+
 ## Getting Started
 
 To build the container:
