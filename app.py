@@ -21,9 +21,6 @@ app.config["RECOMENDER"] = rc
 app.config["IS_TRAINING"] = False
 
 app.config["SQLALCHEMY_ECHO"] = True
-# app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-#     "DATABASE_URL", "postgresql://postgres:postgres@localhost/books_db"
-# )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
@@ -50,16 +47,16 @@ def wait_for_postgres():
 
 @app.route("/train-recommender", methods=["POST"])
 def trigger_training():
-    print("🚀 Triggering recommender training...")
 
     def async_train():
+        print("🚀 Triggering recommender training...")
         with app.app_context():
             app.config["IS_TRAINING"] = True
             rc = app.config["RECOMENDER"]
             rc.is_trained = False
             rc.start_train()  # <-- your .train() method
             app.config["IS_TRAINING"] = False
-            print("✅ Recommender training complete.")
+        print("✅ Recommender training complete.")
 
     with app.app_context():
         if app.config["IS_TRAINING"] == True:
@@ -146,15 +143,23 @@ def reset_db():
 
 
 if __name__ == "__main__":
-    # try:
     print("🚀 Starting Flask app...")
     wait_for_postgres()
     with app.app_context():
         db.create_all()
+        ensure_data_loaded()
 
-    ensure_data_loaded()
+    def startup_train():
+        with app.app_context():
+            rc = app.config["RECOMENDER"]
+            if not rc.is_trained:
+                print("🧠 Starting recommender training on startup...")
+                app.config["IS_TRAINING"] = True
+                rc.start_train()
+                app.config["IS_TRAINING"] = False
+                print("✅ Recommender training completed on startup.")
+            else:
+                print("✅ Recommender is already trained.")
 
-    with app.app_context():
-        create_graph_table()
-    #     print("✅ Flask is now running on http://localhost:5050")
+    threading.Thread(target=startup_train).start()
     app.run(host="0.0.0.0", port=5000)
