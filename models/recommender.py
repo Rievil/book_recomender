@@ -187,12 +187,44 @@ class Recomender:
         ].copy()
         same_author = same_author.sort_values(by="year_of_publication", ascending=False)
 
-        return {
+        # Out dict
+        res = {
             "distance": distance,
             "suggestion": sug,
             "content": similar_books,
             "same_author": same_author,
         }
+
+        out = []
+        for key in ["suggestion", "content", "same_author"]:
+            try:
+                df = res[key]
+                for index, row in df.iterrows():
+                    row_dict = {
+                        "title": row["title"],
+                        "isbn": row["isbn"],
+                        "author": row["book_author"],
+                        "year": row["year_of_publication"],
+                        "type": key,
+                    }
+                    out.append(row_dict)
+            except:
+                pass
+
+        out = pd.DataFrame(out)
+        out = out.drop_duplicates(subset=["isbn", "title"], keep="first")
+
+        out2 = []
+        for index, row in out.iterrows():
+            row_dict = {
+                "title": row["title"],
+                "isbn": row["isbn"],
+                "author": row["author"],
+                "year": row["year"],
+                "similarity": row["type"],  # e.g. "same_author"
+            }
+            out2.append(row_dict)
+        return out2
 
     def train(self):
         vectorizer = TfidfVectorizer(stop_words="english")

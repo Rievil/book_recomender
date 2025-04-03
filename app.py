@@ -50,6 +50,7 @@ def wait_for_postgres():
 
 @app.route("/train-recommender", methods=["POST"])
 def trigger_training():
+    print("🚀 Triggering recommender training...")
 
     def async_train():
         with app.app_context():
@@ -85,7 +86,7 @@ def trigger_training():
 
     thread = threading.Thread(target=async_train)
     thread.start()
-
+    print("✅ Finished training")
     return (
         jsonify(
             {
@@ -127,24 +128,7 @@ def search():
 def predict(isbn):
     rc = current_app.config["RECOMENDER"]
     res = rc.predict(isbn)
-
-    out = []
-    for key in ["suggestion", "content", "same_author"]:
-        try:
-            df = res[key]
-            for _, row in df.iterrows():
-                row_dict = {
-                    "title": row["title"],
-                    "isbn": row["isbn"],
-                    "author": row["book_author"],
-                    "year": row["year_of_publication"],
-                    "similarity": key,  # e.g. "same_author"
-                }
-                out.append(row_dict)
-        except:
-            pass
-
-    return jsonify(out)
+    return jsonify(res)
 
 
 @app.route("/graph-data")
@@ -174,5 +158,3 @@ if __name__ == "__main__":
         create_graph_table()
     #     print("✅ Flask is now running on http://localhost:5050")
     app.run(host="0.0.0.0", port=5000)
-    # except Exception as e:
-    #     print("❌ App failed to start:", str(e))
