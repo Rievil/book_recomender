@@ -11,7 +11,7 @@ The machine learning logic is encapsulated in a `Recommender` class. After start
 
 > [!IMPORTANT]
 > After pulling the repository, please make sure to create a folder data, and put the dataset from kaggle repository there so the app can load them in the DB
-> (Dataset)[https://www.kaggle.com/datasets/arashnic/book-recommendation-dataset/code]
+> [Dataset](https://www.kaggle.com/datasets/arashnic/book-recommendation-dataset/code)
 
 
 ## Getting Started
