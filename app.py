@@ -153,7 +153,7 @@ if __name__ == "__main__":
         with app.app_context():
             rc = app.config["RECOMENDER"]
             if not rc.is_trained:
-                print("🧠 Starting recommender training on startup...")
+                print("Starting recommender training on startup...")
                 app.config["IS_TRAINING"] = True
                 rc.start_train()
                 app.config["IS_TRAINING"] = False
