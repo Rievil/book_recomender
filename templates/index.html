@@ -25,17 +25,17 @@
     </div>
 
     <!-- 🌐 Knowledge Graph -->
-    <h2>🧠 Knowledge Graph</h2>
+    <!-- <h2>🧠 Knowledge Graph</h2>
     <div id="graphContainer">
       <div id="chord-chart"></div>
-    </div>
+    </div> -->
   </div>
 
   <!-- JavaScript logic -->
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 
   <!-- Auto-load graph -->
-  <script>
+  <!-- <script>
     fetch('/graph-data')
       .then(response => response.json())
       .then(data => {
@@ -68,6 +68,6 @@
         chart.interaction('element-active');
         chart.render();
       });
-  </script>
+  </script> -->
 </body>
 </html>

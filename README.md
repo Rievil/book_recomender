@@ -28,12 +28,18 @@ docker-compose up
 
 The app’s web interface is exposed on port `5050` by default.
 
+## Testing framework
+
+The app uses the "Book Recommendation Dataset" from Kaggle, which supports many different approaches to building recommender models. Some of these models are already explored in existing GitHub repositories or Kaggle kernels.
+
+This project provides a framework to test and evaluate those approaches and present the results through a user-friendly interface. The Flask server can be extended into a full web app or reduced to a minimal backend controlled entirely via API calls.
+
 ## Application Limits
 
 The app is designed to train the recommender on a dataset stored in the database. This allows the database to be continuously updated with new records, and training can be triggered manually, or in the future, automatically (e.g. after 100 new ratings or book entries).
 
 Right now:
-- Training is triggered via the API call: `/train-recommender`
+- Training is triggered via the API call: `/train-recommender` the training is also run on the startup of the app itself
 - Predictions are returned via: `/predict/<isbn>`, which outputs a JSON list of recommended books similar to the given ISBN
 
 Currently, the app only works with books that already exist in the database. If a book outside the database is typed into the search bar, no results will be returned.
@@ -62,10 +68,4 @@ Because the recommender can be tested in the running app, it’s also ready for 
 
 I’ve experimented with building knowledge graphs to visually represent relationships between books. This makes it easier to explore or navigate across book clusters. One use case I considered was for a friend who’s a writer, to help her analyze related works and genres visually.
 
-The graphs were generated using the `pyvis` package. I initially planned to integrate them into the app to show book cards and their position in a network of similar titles.
-
-## The Kaggle Dataset
-
-The app uses the "Book Recommendation Dataset" from Kaggle, which supports many different approaches to building recommender models. Some of these models are already explored in existing GitHub repositories or Kaggle kernels.
-
-This project provides a framework to test and evaluate those approaches and present the results through a user-friendly interface. The Flask server can be extended into a full web app or reduced to a minimal backend controlled entirely via API calls.
+The graphs were generated using the `pyvis` package. I initially planned to integrate them into the app to show book cards and their position in a network of similar titles. But I had to left this part. Only remaining part is html page `book_graph_clusters.html`.
